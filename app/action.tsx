@@ -15,7 +15,7 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { headers } from "next/headers";
 
 // Mention tools
-import { mentionFunctions } from "./tools/mentionTools";
+// import { mentionFunctions } from "./tools/mentionTools";
 import { toolConfig } from "./config-tools";
 
 let ratelimit: Ratelimit | undefined;
@@ -331,13 +331,13 @@ async function lookupTool(
   const toolInfo = toolConfig.mentionTools.find(
     (tool) => tool.id === mentionTool
   );
-  if (toolInfo) {
-    return await mentionFunctions[toolInfo.functionName](
-      mentionTool,
-      userMessage,
-      streamable
-    );
-  }
+  // if (toolInfo) {
+  //   return await mentionFunctions[toolInfo.functionName](
+  //     mentionTool,
+  //     userMessage,
+  //     streamable
+  //   );
+  // }
 }
 
 // Main action function that orchestrates the entire process
