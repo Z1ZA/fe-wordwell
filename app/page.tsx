@@ -1,6 +1,6 @@
 import ArtiKata from "@/components/answer/ArtiKata";
+import DaftarKata from "@/components/answer/DaftarKata";
 import HalusKata from "@/components/answer/HalusKata";
-import WordList from "@/components/answer/WordList";
 
 export default function Home() {
   return (
@@ -8,7 +8,7 @@ export default function Home() {
       <div className="flex flex-col justify-center items-center gap-8 lg:flex-row flex-grow md:items-start">
         <ArtiKata />
         <HalusKata />
-        <WordList />
+        <DaftarKata />
       </div>
     </div>
   );

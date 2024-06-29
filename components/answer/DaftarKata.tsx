@@ -86,7 +86,7 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 
-function WordList(): JSX.Element {
+function DaftarKata(): JSX.Element {
   const [wordList, setWordList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredWords, setFilteredWords] = useState([]);
@@ -166,4 +166,4 @@ function WordList(): JSX.Element {
   );
 }
 
-export default WordList;
+export default DaftarKata;
