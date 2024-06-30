@@ -32,9 +32,9 @@ interface Word {
   attributes: Attributes;
 }
 
-function DaftarKata(): JSX.Element {
+const DaftarKata: React.FC = (): JSX.Element => {
   const [wordList, setWordList] = useState<Word[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredWords, setFilteredWords] = useState<Word[]>([]);
 
   useEffect(() => {
@@ -42,11 +42,15 @@ function DaftarKata(): JSX.Element {
   }, []);
 
   useEffect(() => {
+    const sortedWords = [...wordList].sort((a, b) =>
+      a.attributes.title.localeCompare(b.attributes.title)
+    );
+
     if (searchTerm === "") {
-      setFilteredWords(wordList);
+      setFilteredWords(sortedWords);
     } else {
       setFilteredWords(
-        wordList.filter((item) =>
+        sortedWords.filter((item) =>
           item.attributes.title.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
@@ -54,10 +58,13 @@ function DaftarKata(): JSX.Element {
   }, [searchTerm, wordList]);
 
   const getWords = (): void => {
-    GlobalApi.getAllWords().then((resp: AxiosResponse) => {
+    GlobalApi.getAllWords().then((resp: AxiosResponse<{ data: Word[] }>) => {
       console.log(resp.data.data);
-      setWordList(resp.data.data);
-      setFilteredWords(resp.data.data);
+      const sortedData = resp.data.data.sort((a, b) =>
+        a.attributes.title.localeCompare(b.attributes.title)
+      );
+      setWordList(sortedData);
+      setFilteredWords(sortedData);
     });
   };
 
@@ -110,6 +117,6 @@ function DaftarKata(): JSX.Element {
       ))}
     </div>
   );
-}
+};
 
 export default DaftarKata;
