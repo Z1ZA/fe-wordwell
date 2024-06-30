@@ -56,7 +56,7 @@ const StreamingComponent = ({
   return (
     <>
       {currentLlmResponse && (
-        <div className="dark:bg-slate-800 bg-white shadow-lg rounded-lg p-4 mt-4">
+        <div className="dark:bg-slate-800 bg-white shadow-lg rounded-lg p-4 mt-4 max-w-sm md:max-w-md">
           <div className="flex items-center">
             <h2 className="text-lg font-semibold flex-grow dark:text-white text-black">
               Answer
@@ -117,7 +117,11 @@ const LLMResponseComponent = ({
   };
 
   return (
-    <div className={isolatedView ? "flex flex-col max-w-[400px] mx-auto" : ""}>
+    <div
+      className={
+        isolatedView ? "flex flex-col mx-auto max-w-sm md:max-w-md" : ""
+      }
+    >
       {showModal && (
         <Modal
           message={`The query of '${semanticCacheKey}' has been cleared from cache. `}
@@ -128,7 +132,7 @@ const LLMResponseComponent = ({
       {hasLlmResponse || hasCurrentLlmResponse ? (
         <>
           {hasLlmResponse ? (
-            <div className="dark:bg-slate-800 bg-white shadow-lg rounded-lg p-4 mt-4">
+            <div className="dark:bg-slate-800 bg-white shadow-lg rounded-lg p-4 mt-4 max-w-sm md:max-w-md">
               <div className="flex items-center">
                 <h2 className="text-lg font-semibold flex-grow dark:text-white text-black">
                   Response
