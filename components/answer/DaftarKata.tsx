@@ -69,7 +69,7 @@ const DaftarKata: React.FC = (): JSX.Element => {
   };
 
   return (
-    <div className="max-w-md w-full flex flex-col items-center p-6 rounded-lg gap-2 shadow-lg border dark:border-white">
+    <div className="max-w-md w-full flex flex-col items-center p-6 mb-14 rounded-lg gap-2 shadow-lg border dark:border-white">
       <div>
         <h1 className="font-medium text-base">Kumpulan Kata-Kata Kasar</h1>
       </div>
