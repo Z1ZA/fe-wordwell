@@ -249,7 +249,6 @@ export default function HalusKata() {
         <div className="w-full sm:px-4">
           {mentionQuery && (
             <div className="">
-              {/* <div className="flex items-center"></div> */}
               <ul>
                 {mentionTools
                   .filter((tool) =>
@@ -311,7 +310,7 @@ export default function HalusKata() {
               if (!value) return;
             }}
           >
-            <div className="relative flex flex-col w-full overflow-hidden max-h-60 grow dark:bg-slate-800 bg-gray-100 border sm:px-2">
+            <div className="relative rounded-lg flex flex-col w-full overflow-hidden max-h-60 grow dark:bg-slate-800 bg-gray-100 border sm:px-2">
               {selectedMentionToolLogo && (
                 <img
                   src={selectedMentionToolLogo}

@@ -246,10 +246,9 @@ export default function ArtiKata() {
         <div>
           <h1 className="font-medium text-base">Deteksi / Cari Kata Kasar</h1>
         </div>
-        <div className="w-full sm:px-4 flex flex-col gap-1">
+        <div className="w-full sm:px-4">
           {mentionQuery && (
             <div className="">
-              {/* <div className="flex items-center"></div> */}
               <ul>
                 {mentionTools
                   .filter((tool) =>

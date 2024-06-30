@@ -17,10 +17,10 @@ const header = () => {
           </Link>
 
           {/* placeholder */}
-          <div className="hidden sm:block invisible">ProfanityAPI</div>
+          <div className="hidden sm:block invisible">Wordwell</div>
 
           <Link
-            href="https://github.com/Z1ZA"
+            href="https://github.com/Z1ZA/fe-wordwell"
             target="_blank"
             referrerPolicy="no-referrer"
             className={buttonVariants({ variant: "secondary" })}
