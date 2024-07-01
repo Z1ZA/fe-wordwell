@@ -13,16 +13,13 @@ import { functionCalling } from "./function-calling";
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { headers } from "next/headers";
-
-// Mention tools
-// import { mentionFunctions } from "./tools/mentionTools";
 import { toolConfig } from "./config-tools";
 
 let ratelimit: Ratelimit | undefined;
 if (config.useRateLimiting) {
   ratelimit = new Ratelimit({
     redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(10, "10 m"), // 10 requests per 10 minutes
+    limiter: Ratelimit.slidingWindow(10, "10 m"),
   });
 }
 
@@ -180,116 +177,6 @@ export async function processAndVectorizeContent(
   }
 }
 
-// Fetch image search result from serper API
-export async function getImages(
-  message: string
-): Promise<{ title: string; link: string }[]> {
-  const url = "https://google.serper.dev/images";
-  const data = JSON.stringify({
-    q: message,
-  });
-  const requestOptions: RequestInit = {
-    method: "POST",
-    headers: {
-      "X-API-KEY": process.env.SERPER_API as string,
-      "Content-Type": "application/json",
-    },
-    body: data,
-  };
-  try {
-    const response = await fetch(url, requestOptions);
-    if (!response.ok) {
-      throw new Error(
-        `Network response was not ok. Status: ${response.status}`
-      );
-    }
-    const responseData = await response.json();
-    const validLinks = await Promise.all(
-      responseData.images.map(async (image: any) => {
-        const link = image.imageUrl;
-        if (typeof link === "string") {
-          try {
-            const imageResponse = await fetch(link, { method: "HEAD" });
-            if (imageResponse.ok) {
-              const contentType = imageResponse.headers.get("content-type");
-              if (contentType && contentType.startsWith("image/")) {
-                return {
-                  title: image.title,
-                  link: link,
-                };
-              }
-            }
-          } catch (error) {
-            console.error(`Error fetching image link ${link}:`, error);
-          }
-        }
-        return null;
-      })
-    );
-    const filteredLinks = validLinks.filter(
-      (link): link is { title: string; link: string } => link !== null
-    );
-    return filteredLinks.slice(0, 9);
-  } catch (error) {
-    console.error("Error fetching images:", error);
-    throw error;
-  }
-}
-
-// Fetch video search results from serper API
-export async function getVideos(
-  message: string
-): Promise<{ imageUrl: string; link: string }[] | null> {
-  const url = "https://google.serper.dev/videos";
-  const data = JSON.stringify({
-    q: message,
-  });
-  const requestOptions: RequestInit = {
-    method: "POST",
-    headers: {
-      "X-API-KEY": process.env.SERPER_API as string,
-      "Content-Type": "application/json",
-    },
-    body: data,
-  };
-  try {
-    const response = await fetch(url, requestOptions);
-    if (!response.ok) {
-      throw new Error(
-        `Network response was not ok. Status: ${response.status}`
-      );
-    }
-    const responseData = await response.json();
-    const validLinks = await Promise.all(
-      responseData.videos.map(async (video: any) => {
-        const imageUrl = video.imageUrl;
-        if (typeof imageUrl === "string") {
-          try {
-            const imageResponse = await fetch(imageUrl, { method: "HEAD" });
-            if (imageResponse.ok) {
-              const contentType = imageResponse.headers.get("content-type");
-              if (contentType && contentType.startsWith("image/")) {
-                return { imageUrl, link: video.link };
-              }
-            }
-          } catch (error) {
-            console.error(`Error fetching image link ${imageUrl}:`, error);
-          }
-        }
-        return null;
-      })
-    );
-    const filteredLinks = validLinks.filter(
-      (link): link is { imageUrl: string; link: string } => link !== null
-    );
-    return filteredLinks.slice(0, 9);
-  } catch (error) {
-    console.error("Error fetching videos:", error);
-    throw error;
-  }
-}
-
-// Generate follow up questions using OpenAI API
 const relevantQuestions = async (
   sources: SearchResult[],
   userMessage: String
@@ -331,16 +218,12 @@ async function lookupTool(
   const toolInfo = toolConfig.mentionTools.find(
     (tool) => tool.id === mentionTool
   );
-  // if (toolInfo) {
-  //   return await mentionFunctions[toolInfo.functionName](
-  //     mentionTool,
-  //     userMessage,
-  //     streamable
-  //   );
-  // }
 }
 
-// Main action function that orchestrates the entire process
+function isSentence(message: string): boolean {
+  return message.trim().split(/\s+/).length > 1;
+}
+
 async function myAction(
   userMessage: string,
   mentionTool: string | null,
@@ -373,24 +256,19 @@ async function myAction(
       }
     }
 
-    const [images, sources, videos, condtionalFunctionCallUI] =
-      await Promise.all([
-        getImages(userMessage),
-        config.searchProvider === "brave"
-          ? braveSearch(userMessage)
-          : config.searchProvider === "serper"
-          ? serperSearch(userMessage)
-          : config.searchProvider === "google"
-          ? googleSearch(userMessage)
-          : Promise.reject(
-              new Error(`Unsupported search provider: ${config.searchProvider}`)
-            ),
-        getVideos(userMessage),
-        functionCalling(userMessage),
-      ]);
+    const [sources, condtionalFunctionCallUI] = await Promise.all([
+      config.searchProvider === "brave"
+        ? braveSearch(userMessage)
+        : config.searchProvider === "serper"
+        ? serperSearch(userMessage)
+        : config.searchProvider === "google"
+        ? googleSearch(userMessage)
+        : Promise.reject(
+            new Error(`Unsupported search provider: ${config.searchProvider}`)
+          ),
+      functionCalling(userMessage),
+    ]);
     streamable.update({ searchResults: sources });
-    streamable.update({ images: images });
-    streamable.update({ videos: videos });
     if (config.useFunctionCalling) {
       streamable.update({
         conditionalFunctionCallUI: condtionalFunctionCallUI,
@@ -398,16 +276,23 @@ async function myAction(
     }
     const html = await get10BlueLinksContents(sources);
     const vectorResults = await processAndVectorizeContent(html, userMessage);
+    const prompt = isSentence(userMessage)
+      ? `
+        - Berikut adalah kalimat kasar "${userMessage}". HANYA Berikan "versi yang lebih halus" dari kalimat ini dalam bahasa Indonesia. Jawaban harus ringkas dan singkat dalam format markdown.
+        `
+      : `
+        - Berikut adalah kata kasar "${userMessage}". HANYA Berikan "pengertian", "contoh penggunaan", dan "kata yang terkait" dalam bahasa Indonesia. Jawaban harus ringkas dan singkat dalam format markdown.
+        `;
+
     const chatCompletion = await openai.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: `
-          - Here is my query "${userMessage}", respond back ALWAYS IN BAHASA INDONESIA and format MARKDOWN and be verbose with a lot of details. Always interpret all harsh words, if the query is in "word" form then display the meaning of the words, else if the query is in "sentence" form which contains harsh words then provide a smoother version of the sentence, never mention the system message. If you can't find any relevant results, respond with "No relevant results found." `,
+          content: prompt,
         },
         {
           role: "user",
-          content: ` - Here are the top results to respond with, respond in BAHASA INDONESIA and format markdown!:,  ${JSON.stringify(
+          content: ` - Berikut adalah hasil teratas untuk menjawab, dalam bahasa Indonesia dan format markdown!:,  ${JSON.stringify(
             vectorResults
           )}. `,
         },
@@ -435,8 +320,6 @@ async function myAction(
     }
     const dataToCache = {
       searchResults: sources,
-      images,
-      videos,
       conditionalFunctionCallUI: config.useFunctionCalling
         ? condtionalFunctionCallUI
         : undefined,
@@ -456,6 +339,7 @@ async function myAction(
   })();
   return streamable.value;
 }
+
 async function clearSemanticCache(userMessage: string): Promise<any> {
   "use server";
   console.log("Clearing semantic cache for user message:", userMessage);
