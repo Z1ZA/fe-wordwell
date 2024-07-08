@@ -1,5 +1,4 @@
 import React from "react";
-// import { IconPlus } from "@/components/ui/icons";
 import { Plus } from "lucide-react";
 
 interface InitialQueriesProps {

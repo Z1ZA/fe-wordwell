@@ -1,40 +1,34 @@
-// 1. Import the 'useState' and 'useEffect' hooks from React
 import { useState, useEffect } from "react";
 
-// 2. Define the 'SearchResult' interface with properties for 'favicon', 'link', and 'title'
+// Mendefinisikan SearchResult interface dengan properti 'favicon', 'link', and 'title'
 export interface SearchResult {
   favicon: string;
   link: string;
   title: string;
 }
-
-// 3. Define the 'SearchResultsComponentProps' interface with a 'searchResults' property of type 'SearchResult[]'
+// Mendefinisikan SearchResultsComponentProps interface dengan searchResults property bertipe SearchResult[]
 export interface SearchResultsComponentProps {
   searchResults: SearchResult[];
 }
-
-// 4. Define the 'SearchResultsComponent' functional component that takes 'searchResults' as a prop
+// Mendefinisikan SearchResultsComponent functional component dengan searchResults sebagai prop
 const SearchResultsComponent = ({
   searchResults,
 }: {
   searchResults: SearchResult[];
 }) => {
-  // 5. Use the 'useState' hook to manage the 'isExpanded' and 'loadedFavicons' state
   const [isExpanded, setIsExpanded] = useState(false);
   const [loadedFavicons, setLoadedFavicons] = useState<boolean[]>([]);
 
-  // 6. Use the 'useEffect' hook to initialize the 'loadedFavicons' state based on the 'searchResults' length
+  // Initialize loadedFavicons state berdasarkan panjang searchResults
   useEffect(() => {
     setLoadedFavicons(Array(searchResults.length).fill(false));
   }, [searchResults]);
 
-  // 7. Define the 'toggleExpansion' function to toggle the 'isExpanded' state
   const toggleExpansion = () => setIsExpanded(!isExpanded);
 
-  // 8. Define the 'visibleResults' variable to hold the search results to be displayed based on the 'isExpanded' state
+  // visibleResults variabel untuk menampung search results yang akan ditampilkan berdasarkan isExpanded state
   const visibleResults = isExpanded ? searchResults : searchResults.slice(0, 3);
 
-  // 9. Define the 'handleFaviconLoad' function to update the 'loadedFavicons' state when a favicon is loaded
   const handleFaviconLoad = (index: number) => {
     setLoadedFavicons((prevLoadedFavicons) => {
       const updatedLoadedFavicons = [...prevLoadedFavicons];
@@ -43,7 +37,7 @@ const SearchResultsComponent = ({
     });
   };
 
-  // 10. Define the 'SearchResultsSkeleton' component to render a loading skeleton
+  // SearchResultsSkeleton untuk menampilkan loading skeleton
   const SearchResultsSkeleton = () => (
     <>
       {Array.from({ length: isExpanded ? searchResults.length : 3 }).map(
@@ -61,7 +55,7 @@ const SearchResultsComponent = ({
           </div>
         )
       )}
-      {/* Add a skeleton for the "View more" button */}
+      {/* menambah skeleton untuk "View more" button */}
       <div className="w-full sm:w-full md:w-1/4 p-2">
         <div className="flex items-center space-x-2 dark:bg-slate-700 bg-gray-100 p-3 rounded-lg h-12 justify-center">
           <div className="w-5 h-5 dark:bg-slate-600 bg-gray-400 rounded animate-pulse"></div>
@@ -73,7 +67,7 @@ const SearchResultsComponent = ({
     </>
   );
 
-  // 11. Render the 'SearchResultsComponent'
+  // Render SearchResultsComponent
   return (
     <div className="dark:bg-slate-800 bg-white shadow-lg rounded-lg p-4 mt-4 max-w-sm md:max-w-md">
       <div className="flex items-center">
@@ -83,11 +77,11 @@ const SearchResultsComponent = ({
       </div>
       <div className="flex flex-wrap my-2">
         {searchResults.length === 0 ? (
-          // 12. Render the 'SearchResultsSkeleton' if there are no search results
+          // Render SearchResultsSkeleton jika tidak ada hasil pencarian
           <SearchResultsSkeleton />
         ) : (
           <>
-            {/* 13. Render the search results with favicon, title, and link */}
+            {/* Render search results dengan favicon, title, and link */}
             {visibleResults.map((result, index) => (
               <div
                 key={`searchResult-${index}`}
@@ -118,7 +112,7 @@ const SearchResultsComponent = ({
                 </div>
               </div>
             ))}
-            {/* 14. Render a button to toggle the expansion of search results */}
+            {/* Render tombol untuk toggle expansion hasil pencarian */}
             <div className="w-full sm:w-full md:w-1/4 p-2">
               <div
                 onClick={toggleExpansion}

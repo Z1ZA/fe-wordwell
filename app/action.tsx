@@ -9,7 +9,7 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { config } from "./config";
 import { functionCalling } from "./function-calling";
-// Use Upstash rate limiting to limit the number of requests per user
+// Upstash rate limiting untuk membatasi request per user
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { headers } from "next/headers";
@@ -19,11 +19,11 @@ let ratelimit: Ratelimit | undefined;
 if (config.useRateLimiting) {
   ratelimit = new Ratelimit({
     redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(10, "10 m"),
+    limiter: Ratelimit.slidingWindow(10, "10 m"), // 10 Request tiap 10 menit
   });
 }
 
-// Use Upstash semantic cache to store and retrieve data for faster response times
+// Upstash semantic cache untuk menyimpan dan mengambil data untuk waktu response yg lebih cepat
 import { SemanticCache } from "@upstash/semantic-cache";
 import { Index } from "@upstash/vector";
 let semanticCache: SemanticCache | undefined;
@@ -38,7 +38,7 @@ import {
   serperSearch,
 } from "./tools/searchProvider";
 
-// Determine which embeddings mode and which inference model to use based on the config.tsx. Currently suppport for OpenAI, Groq and partial support for Ollama embeddings and inference
+// Menentukan mode embedding dan inteface model yang akan digunakan berdasarkan config.tsx (currently support untuk OpenAI Groq dan partial support untuk ollama)
 let openai: OpenAI;
 if (config.useOllamaInference) {
   openai = new OpenAI({
@@ -52,7 +52,7 @@ if (config.useOllamaInference) {
   });
 }
 
-// Set up the embeddings model based on the config.tsx
+// Setup embedding model berdasarkan config.tsx
 let embeddings: OllamaEmbeddings | OpenAIEmbeddings;
 if (config.useOllamaEmbeddings) {
   embeddings = new OllamaEmbeddings({
@@ -65,7 +65,7 @@ if (config.useOllamaEmbeddings) {
   });
 }
 
-// Define interfaces for search results and content results
+// Mendefinisikan interface untuk search results dan content results
 interface SearchResult {
   title: string;
   link: string;
@@ -75,7 +75,7 @@ interface ContentResult extends SearchResult {
   html: string;
 }
 
-// Fetch content of top 10 search result
+// Mengambil content dari 10 hasil teratas
 export async function get10BlueLinksContents(
   sources: SearchResult[]
 ): Promise<ContentResult[]> {
@@ -137,7 +137,7 @@ export async function get10BlueLinksContents(
   }
 }
 
-// Process and vectorize content using LangChain
+// Process dan vectorize content menggunakan LangChain
 export async function processAndVectorizeContent(
   contents: ContentResult[],
   query: string,
@@ -177,39 +177,6 @@ export async function processAndVectorizeContent(
   }
 }
 
-const relevantQuestions = async (
-  sources: SearchResult[],
-  userMessage: String
-): Promise<any> => {
-  return await openai.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: `
-          You are a Question generator who generates an array of 3 follow-up questions in JSON format.
-          The JSON schema should include:
-          {
-            "original": "The original search query or context",
-            "followUp": [
-              "Question 1",
-              "Question 2", 
-              "Question 3"
-            ]
-          }
-          `,
-      },
-      {
-        role: "user",
-        content: `Generate follow-up questions based on the top results from a similarity search: ${JSON.stringify(
-          sources
-        )}. The original search query is: "${userMessage}".`,
-      },
-    ],
-    model: config.inferenceModel,
-    response_format: { type: "json_object" },
-  });
-};
-
 async function lookupTool(
   mentionTool: string,
   userMessage: string,
@@ -224,6 +191,7 @@ function isSentence(message: string): boolean {
   return message.trim().split(/\s+/).length > 1;
 }
 
+// Fungsi utama yang mengatur seluruh proses
 async function myAction(
   userMessage: string,
   mentionTool: string | null,
@@ -313,18 +281,13 @@ async function myAction(
         streamable.update({ llmResponseEnd: true });
       }
     }
-    let followUp;
-    if (!config.useOllamaInference) {
-      followUp = await relevantQuestions(sources, userMessage);
-      streamable.update({ followUp: followUp });
-    }
+
     const dataToCache = {
       searchResults: sources,
       conditionalFunctionCallUI: config.useFunctionCalling
         ? condtionalFunctionCallUI
         : undefined,
       llmResponse: accumulatedLLMResponse,
-      followUp,
       condtionalFunctionCallUI,
       semanticCacheKey: userMessage,
     };
@@ -347,7 +310,7 @@ async function clearSemanticCache(userMessage: string): Promise<any> {
   await semanticCache.delete(userMessage);
 }
 
-// Define intial AI and UI states
+// Mendefinisikan initial AI dan UI states
 const initialAIState: {
   role: "user" | "assistant" | "system" | "function";
   content: string;
@@ -358,7 +321,7 @@ const initialUIState: {
   id: number;
   display: React.ReactNode;
 }[] = [];
-// Export the AI instance
+// Export AI instance
 export const AI = createAI({
   actions: {
     myAction,

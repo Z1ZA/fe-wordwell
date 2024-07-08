@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { type AI } from "../../app/action";
 import { useActions } from "ai/rsc";
 import Markdown from "react-markdown";
@@ -6,6 +6,9 @@ import CopyToClipboard from "react-copy-to-clipboard";
 import { Copy, Check, ArrowsCounterClockwise } from "@phosphor-icons/react";
 import "react-tooltip/dist/react-tooltip.css";
 import { Tooltip } from "react-tooltip";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import GlobalApi from "@/app/_utils/GlobalApi";
 
 const Modal = ({
   message,
@@ -95,6 +98,33 @@ const SkeletonLoader = () => {
   );
 };
 
+const CustomMarkdown: React.FC<{ content: string }> = ({ content }) => {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ node, ...props }) => (
+          <p className="mb-2 dark:text-white" {...props} />
+        ),
+        h1: ({ node, ...props }) => (
+          <h1 className="text-xl font-bold mb-2 dark:text-white" {...props} />
+        ),
+        h2: ({ node, ...props }) => (
+          <h2 className="text-lg font-bold mb-2 dark:text-white" {...props} />
+        ),
+        li: ({ node, ...props }) => (
+          <li
+            className="list-disc list-inside ml-4 dark:text-white"
+            {...props}
+          />
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+};
+
 const LLMResponseComponent = ({
   llmResponse,
   currentLlmResponse,
@@ -106,6 +136,8 @@ const LLMResponseComponent = ({
   const { clearSemanticCache } = useActions<typeof AI>();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  // const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // const [kataKasar, setKataKasar] = useState<string[]>([]);
 
   const hasLlmResponse = llmResponse && llmResponse.trim().length > 0;
   const hasCurrentLlmResponse =
@@ -115,6 +147,37 @@ const LLMResponseComponent = ({
     clearSemanticCache(semanticCacheKey);
     setShowModal(true);
   };
+
+  // useEffect(() => {
+  //   const loadKataKasar = async () => {
+  //     try {
+  //       const response = await GlobalApi.getAllWords();
+  //       const words = response.data.data.map((item: any) =>
+  //         item.attributes.title.toLowerCase()
+  //       );
+  //       setKataKasar(words);
+  //     } catch (error) {
+  //       console.error("Failed to load kata kasar:", error);
+  //     }
+  //   };
+
+  //   loadKataKasar();
+  // }, []);
+
+  // useEffect(() => {
+  //   // Cek apakah llmResponse atau currentLlmResponse adalah kata kasar
+  //   const isKataKasar = kataKasar.some(
+  //     (kata) =>
+  //       llmResponse.toLowerCase().includes(kata) ||
+  //       currentLlmResponse.toLowerCase().includes(kata)
+  //   );
+
+  //   if (!isKataKasar && (hasLlmResponse || hasCurrentLlmResponse)) {
+  //     setErrorMessage("Hanya masukkan kata-kata kasar");
+  //   } else {
+  //     setErrorMessage(null);
+  //   }
+  // }, [llmResponse, currentLlmResponse, kataKasar]);
 
   return (
     <div
@@ -129,6 +192,11 @@ const LLMResponseComponent = ({
         />
       )}
 
+      {/* {errorMessage ? (
+        <div className="bg-red-500 text-white p-4 rounded-lg shadow-md">
+          {errorMessage}
+        </div>
+      ) :  */}
       {hasLlmResponse || hasCurrentLlmResponse ? (
         <>
           {hasLlmResponse ? (
@@ -139,7 +207,7 @@ const LLMResponseComponent = ({
                 </h2>
               </div>
               <div className="dark:text-gray-300 text-gray-800 markdown-container">
-                <Markdown>{llmResponse}</Markdown>
+                <CustomMarkdown content={llmResponse} />
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-between">
