@@ -9,28 +9,6 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { config } from "./config";
 import { functionCalling } from "./function-calling";
-// Upstash rate limiting untuk membatasi request per user
-import { Redis } from "@upstash/redis";
-import { Ratelimit } from "@upstash/ratelimit";
-import { headers } from "next/headers";
-import { toolConfig } from "./config-tools";
-
-let ratelimit: Ratelimit | undefined;
-if (config.useRateLimiting) {
-  ratelimit = new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(10, "10 m"), // 10 Request tiap 10 menit
-  });
-}
-
-// Upstash semantic cache untuk menyimpan dan mengambil data untuk waktu response yg lebih cepat
-import { SemanticCache } from "@upstash/semantic-cache";
-import { Index } from "@upstash/vector";
-let semanticCache: SemanticCache | undefined;
-if (config.useSemanticCache) {
-  const index = new Index();
-  semanticCache = new SemanticCache({ index, minProximity: 0.95 });
-}
 
 import {
   braveSearch,
@@ -177,16 +155,6 @@ export async function processAndVectorizeContent(
   }
 }
 
-async function lookupTool(
-  mentionTool: string,
-  userMessage: string,
-  streamable: any
-) {
-  const toolInfo = toolConfig.mentionTools.find(
-    (tool) => tool.id === mentionTool
-  );
-}
-
 function isSentence(message: string): boolean {
   return message.trim().split(/\s+/).length > 1;
 }
@@ -200,30 +168,6 @@ async function myAction(
   "use server";
   const streamable = createStreamableValue({});
   (async () => {
-    if (config.useRateLimiting && ratelimit) {
-      const identifier =
-        headers().get("x-forwarded-for") ||
-        headers().get("x-real-ip") ||
-        headers().get("cf-connecting-ip") ||
-        headers().get("client-ip") ||
-        "";
-      const { success } = await ratelimit.limit(identifier);
-      if (!success) {
-        return streamable.done({ status: "rateLimitReached" });
-      }
-    }
-    if (mentionTool) {
-      await lookupTool(mentionTool, userMessage, streamable);
-      return;
-    }
-    if (config.useSemanticCache && semanticCache) {
-      const cachedData = await semanticCache.get(userMessage);
-      if (cachedData) {
-        streamable.update({ cachedData: cachedData });
-        return;
-      }
-    }
-
     const [sources, condtionalFunctionCallUI] = await Promise.all([
       config.searchProvider === "brave"
         ? braveSearch(userMessage)
@@ -291,23 +235,11 @@ async function myAction(
       condtionalFunctionCallUI,
       semanticCacheKey: userMessage,
     };
-    if (
-      config.useSemanticCache &&
-      semanticCache &&
-      dataToCache.llmResponse.length > 0
-    ) {
-      await semanticCache.set(userMessage, JSON.stringify(dataToCache));
+    if (config.useSemanticCache && dataToCache.llmResponse.length > 0) {
     }
     streamable.done({ status: "done" });
   })();
   return streamable.value;
-}
-
-async function clearSemanticCache(userMessage: string): Promise<any> {
-  "use server";
-  console.log("Clearing semantic cache for user message:", userMessage);
-  if (!config.useSemanticCache || !semanticCache) return;
-  await semanticCache.delete(userMessage);
 }
 
 // Mendefinisikan initial AI dan UI states
@@ -325,7 +257,6 @@ const initialUIState: {
 export const AI = createAI({
   actions: {
     myAction,
-    clearSemanticCache,
   },
   initialUIState,
   initialAIState,

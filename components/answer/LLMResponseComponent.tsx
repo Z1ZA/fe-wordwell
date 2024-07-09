@@ -133,7 +133,6 @@ const LLMResponseComponent = ({
   isolatedView,
   logo,
 }: LLMResponseComponentProps) => {
-  const { clearSemanticCache } = useActions<typeof AI>();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   // const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -142,11 +141,6 @@ const LLMResponseComponent = ({
   const hasLlmResponse = llmResponse && llmResponse.trim().length > 0;
   const hasCurrentLlmResponse =
     currentLlmResponse && currentLlmResponse.trim().length > 0;
-
-  const handleClearCache = () => {
-    clearSemanticCache(semanticCacheKey);
-    setShowModal(true);
-  };
 
   // useEffect(() => {
   //   const loadKataKasar = async () => {

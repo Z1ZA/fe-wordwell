@@ -1,5 +1,4 @@
 "use client";
-// 1. Import Dependencies
 import { FormEvent, useEffect, useRef, useState, useCallback } from "react";
 import { useActions, readStreamableValue } from "ai/rsc";
 import { type AI } from "@/app/action";
@@ -13,18 +12,11 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
-// Main components
 import SearchResultsComponent from "@/components/answer/SearchResultComponent";
 import UserMessageComponent from "@/components/answer/UserMessageComponent";
 import InitialQueries from "@/components/answer/InitialQueries";
-// Sidebar components
 import LLMResponseComponent from "@/components/answer/LLMResponseComponent";
-// Function calling components
 import { ArrowUp } from "@phosphor-icons/react";
-// OPTIONAL: Use Upstash rate limiting to limit the number of requests per user
-import RateLimit from "@/components/answer/RateLimit";
-import { toolConfig } from "@/app/config-tools";
-// 2. Set up types
 interface SearchResult {
   favicon: string;
   link: string;
@@ -60,10 +52,6 @@ interface StreamMessage {
   falBase64Image?: any;
 }
 
-const mentionTools = toolConfig.useMentionQueries
-  ? toolConfig.mentionTools
-  : [];
-
 export default function ArtiKata() {
   const [mentionQuery, setMentionQuery] = useState("");
   const [selectedMentionTool, setSelectedMentionTool] = useState<string | null>(
@@ -72,17 +60,17 @@ export default function ArtiKata() {
   const [selectedMentionToolLogo, setSelectedMentionToolLogo] = useState<
     string | null
   >(null);
-  // 3. Set up action that will be used to stream all the messages
+  // Setup action yang akan digunakan untuk stream semua messages
   const { myAction } = useActions<typeof AI>();
-  // 4. Set up form submission handling
+  // Setup form submission handling
   const { formRef, onKeyDown } = useEnterSubmit();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [inputValue, setInputValue] = useState("");
-  // 5. Set up state for the messages
+  // Setup state untuk messages
   const [messages, setMessages] = useState<Message[]>([]);
-  // 6. Set up state for the CURRENT LLM response (for displaying in the UI while streaming)
+  // Setup state untuk CURRENT LLM response (untuk displaying dalam UI selama streaming)
   const [currentLlmResponse, setCurrentLlmResponse] = useState("");
-  // 7. Set up handler for when the user clicks on the follow up button
+  // Setup handler untuk ketika the user menekan follow up button
   const handleFollowUpClick = useCallback(async (question: string) => {
     setCurrentLlmResponse("");
     await handleUserMessageSubmission({
@@ -92,7 +80,7 @@ export default function ArtiKata() {
     });
   }, []);
 
-  // 8. For the form submission, we need to set up a handler that will be called when the user submits the form
+  // Untuk form submission, setup handler yang akan dipanggil ketika user submit form
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "/") {
@@ -115,7 +103,7 @@ export default function ArtiKata() {
     };
   }, [inputRef]);
 
-  // 9. Set up handler for when a submission is made, which will call the myAction function
+  // Setup handler untuk ketika submission dibuat, akan memanggil myAction function
   const handleSubmit = async (payload: {
     message: string;
     mentionTool: string | null;
@@ -160,7 +148,7 @@ export default function ArtiKata() {
       status: "",
       semanticCacheKey: null,
       cachedData: "",
-      isolatedView: !!payload.mentionTool, // Set isolatedView based on mentionTool
+      isolatedView: !!payload.mentionTool, // Set isolatedView berdasarkan mentionTool
       falBase64Image: null,
     };
     setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -247,56 +235,6 @@ export default function ArtiKata() {
           <h1 className="font-medium text-base">Deteksi / Cari Kata Kasar</h1>
         </div>
         <div className="w-full sm:px-4">
-          {mentionQuery && (
-            <div className="">
-              <ul>
-                {mentionTools
-                  .filter((tool) =>
-                    tool.name.toLowerCase().includes(mentionQuery.toLowerCase())
-                  )
-                  .map((tool) => (
-                    <li
-                      key={tool.id}
-                      className="flex items-center cursor-pointer dark:bg-slate-800 bg-white shadow-lg rounded-lg p-4 mb-2"
-                      onClick={() => {
-                        setSelectedMentionTool(tool.id);
-                        setSelectedMentionToolLogo(tool.logo);
-                        setMentionQuery("");
-                        setInputValue(" "); // Update the input value with a single blank space
-                      }}
-                    >
-                      {tool.logo ? (
-                        <img
-                          src={tool.logo}
-                          alt={tool.name}
-                          className="w-6 h-6 rounded-full"
-                        />
-                      ) : (
-                        <span
-                          role="img"
-                          aria-label="link"
-                          className="mr-2 dark:text-white text-black"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 256 256"
-                            fill="currentColor"
-                            className="h-4 w-4"
-                          >
-                            <path d="M224 128a8 8 0 0 1-8 8h-80v80a8 8 0 0 1-16 0v-80H40a8 8 0 0 1 0-16h80V40a8 8 0 0 1 16 0v80h80a8 8 0 0 1 8 8Z"></path>
-                          </svg>
-                        </span>
-                      )}
-
-                      <p className="ml-2 dark:text-white block sm:inline text-md sm:text-lg font-semibold dark:text-white text-black">
-                        @{tool.name}
-                      </p>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
-
           <form
             ref={formRef}
             onSubmit={async (e: FormEvent<HTMLFormElement>) => {
@@ -400,8 +338,6 @@ export default function ArtiKata() {
                   // Render regular view
                   <div className="flex flex-col md:flex-row mx-auto max-w-md">
                     <div className="w-full">
-                      {message.status &&
-                        message.status === "rateLimitReached" && <RateLimit />}
                       {message.type === "userMessage" && (
                         <UserMessageComponent message={message.userMessage} />
                       )}
